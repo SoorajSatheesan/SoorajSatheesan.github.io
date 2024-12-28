@@ -10,6 +10,61 @@
       body {
         overflow: hidden; /* Hide the scrollbar */
       }
+
+      .floating {
+        position: absolute;
+        background: #000;
+        color: white;
+        font-family: monospace;
+        padding: 1rem;
+        overflow-y: auto;
+        resize: both;
+        border: 1px solid gray; /* Added thin margin */
+      }
+
+      #terminal {
+        border: 1px solid gray; /* Added thin margin */
+      }
+
+      .red-text {
+        color: red;
+      }
+
+      .green-text {
+        color: green;
+      }
+      .white-text {
+        color: white;
+      }
+      .blue-text {
+        color: blue;
+      }
+
+      .typing {
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+        animation: typing 2s steps(40, end), blink-caret 0.75s step-end infinite;
+      }
+
+      @keyframes typing {
+        from {
+          width: 0;
+        }
+        to {
+          width: 100%;
+        }
+      }
+
+      @keyframes blink-caret {
+        from,
+        to {
+          border-color: transparent;
+        }
+        50% {
+          border-color: white;
+        }
+      }
     </style>
   </head>
   <body class="font-mono bg-black">
@@ -171,6 +226,99 @@
         camera.updateProjectionMatrix();
       });
 
+      // Typing effect function
+      async function typeText(
+        element,
+        text,
+        colorClass = "",
+        delay = 100,
+        lineGap = 500
+      ) {
+        const span = document.createElement("span");
+        if (colorClass) span.classList.add(colorClass);
+        element.appendChild(span);
+        for (const char of text) {
+          span.innerHTML += char;
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+        await new Promise((resolve) => setTimeout(resolve, lineGap));
+        element.innerHTML += "<br>";
+      }
+
+      // Fetch User Details and Display
+      async function fetchUserDetails() {
+        const terminalText = document.getElementById("terminal-text");
+        await typeText(terminalText, "Fetching your details...");
+
+        try {
+          const response = await fetch("https://ipapi.co/json/");
+          const data = await response.json();
+
+          await typeText(
+            terminalText,
+            `Your IP Address: ${data.ip}`,
+            "red-text",
+            150,
+            150
+          );
+          await typeText(
+            terminalText,
+            `Your Location: ${data.city}, ${data.region}, ${data.country_name}`,
+            "red-text",
+            150,
+            150
+          );
+          await typeText(
+            terminalText,
+            `Your ISP: ${data.org}`,
+            "red-text",
+            150,
+            150
+          );
+
+          await typeText(
+            terminalText,
+            "----------------Access granted----------------",
+            "green-text",
+            150,
+            150
+          );
+          await typeText(
+            terminalText,
+            "Connecting....................................",
+            "blue-text",
+            250,
+            150
+          );
+          await typeText(terminalText, " ", "white-text", 2000);
+          await typeText(
+            terminalText,
+            `Hi, USER ${data.ip.replace(/\./g, "")}`,
+            "white-text",
+            150,
+            1000
+          );
+          await typeText(
+            terminalText,
+            "Welcome to my portfolio",
+            "white-text",
+            150,
+            1000
+          );
+          await typeText(
+            terminalText,
+            "Choose an option below to explore.",
+            "white-text",
+            150,
+            2000
+          );
+
+          document.getElementById("options").classList.remove("hidden");
+        } catch (error) {
+          await typeText(terminalText, "Failed to fetch user details.", 100);
+        }
+      }
+
       // Particle Convergence, Dispersion, and Section Navigation
       function triggerTransition(sectionId) {
         const positions = particleGeometry.attributes.position.array;
@@ -233,34 +381,16 @@
       // Typing Effect with Options
       const terminalText = document.getElementById("terminal-text");
       const options = document.getElementById("options");
-      const messages = [
-        "System activated...",
-        "Authenticating user...",
-        "Access granted.",
-        "Welcome to the portfolio of Sooraj Satheesan.",
-        "Choose an option below to explore.",
-      ];
+      const messages = ["System activated...", "Authenticating user..."];
 
-      let messageIndex = 0;
-      let charIndex = 0;
-
-      function typeMessage() {
-        if (charIndex < messages[messageIndex].length) {
-          terminalText.innerHTML += messages[messageIndex].charAt(charIndex);
-          charIndex++;
-          setTimeout(typeMessage, 100);
-        } else {
-          charIndex = 0;
-          messageIndex++;
-          if (messageIndex < messages.length) {
-            terminalText.innerHTML += "<br>";
-            setTimeout(typeMessage, 1000);
-          } else {
-            options.classList.remove("hidden");
-          }
+      async function displayMessages() {
+        for (const message of messages) {
+          await typeText(terminalText, message);
         }
+        await fetchUserDetails();
       }
-      setTimeout(typeMessage, 1000);
+
+      setTimeout(displayMessages, 1000);
 
       // Navigation Function
       function navigateTo(sectionId) {
